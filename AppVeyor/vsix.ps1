@@ -127,7 +127,7 @@ function Vsix-IncrementVsixVersion {
 
         [ValidateSet("build","revision")]
         [Parameter(Position=2, Mandatory=0)]
-        [string]$versionType = "build",
+        [string]$versionType = "revision",
 
         [switch]$updateBuildVersion
     )
