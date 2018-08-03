@@ -77,7 +77,8 @@ function Vsix-PublishToGallery{
         {
             [string]$url = ($vsixUploadEndpoint + "?repo=" + $repo + "&issuetracker=" + $issueTracker)
             [byte[]]$bytes = [System.IO.File]::ReadAllBytes($vsixFile)
-
+		
+            $url | Write-Host -ForegroundColor Purple
             try {
                 $response = Invoke-WebRequest $url -Method Post -Body $bytes -UseBasicParsing
                 'OK' | Write-Host -ForegroundColor Green
