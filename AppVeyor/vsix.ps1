@@ -93,10 +93,8 @@ function Vsix-PublishToGallery{
 function Vsix-UpdateBuildVersion {
     [cmdletbinding()]
     param (
-        [Parameter(Position=0, Mandatory=1,ValueFromPipelineByPropertyName=$true)]
+        [Parameter(Position=0, Mandatory=1, ValueFromPipelineByPropertyName=$true)]
         [Version[]]$version,
-        [Parameter(Position=1,ValueFromPipeline=$true,ValueFromPipelineByPropertyName=$true)]
-        $vsixFilePath,
         [switch]$updateOnPullRequests
     )
     process{
@@ -111,26 +109,31 @@ function Vsix-UpdateBuildVersion {
                 }
             }
         }
-
-        $vsixFilePath
     }
 }
 
 function Vsix-UpdateVsixCsVersion {
     [cmdletbinding()]
     param (
-        [Parameter(Position=0, Mandatory=1,ValueFromPipelineByPropertyName=$true)]
+        [Parameter(Position=0, Mandatory=1, ValueFromPipeline=$true, ValueFromPipelineByPropertyName=$true)]
         [Version]$version,
-        [Parameter(Position=1, Mandatory=1, ValueFromPipeline=$true,ValueFromPipelineByPropertyName=$true)]
-        $vsixFilePath,
-        [Parameter(Position=2, Mandatory=1)]
-        $initialVersion
+        [Parameter(Position=1, Mandatory=1)]
+        $initialVersion,
+        [string[]]$manifestFilePath = ".\source.extension.cs"
     )
     process{
-	Write-Host "Updating Vsix version for $vsixFilePath... " -ForegroundColor Cyan -NoNewline
-        $content = [System.IO.File]::ReadAllText($vsixFilePath).Replace($initialVersion, $version)
-        [System.IO.File]::WriteAllText($vsixFilePath, $content)
-        $version  | Write-Host -ForegroundColor Green
+        foreach($manifestFile in $manifestFilePath)
+        {            
+	        Write-Host "Updating Vsix Cs version " -ForegroundColor Cyan -NoNewline
+            $matches = (Get-ChildItem $manifestFile -Recurse)
+            $vsixFileCsPath = $matches[$matches.Count - 1] # Get the last one which matches the top most file in the recursive matches
+
+	        Write-Host "for $vsixFileCsPath... " -ForegroundColor Cyan -NoNewline
+
+            $content = [System.IO.File]::ReadAllText($vsixFileCsPath).Replace($initialVersion, $version)
+            [System.IO.File]::WriteAllText($vsixFileCsPath, $content)
+            $version  | Write-Host -ForegroundColor Green
+        }
     }
 }
 
@@ -146,6 +149,8 @@ function Vsix-IncrementVsixVersion {
         [ValidateSet("build","revision")]
         [Parameter(Position=2, Mandatory=0)]
         [string]$versionType = "revision",
+
+        [string]$initialVersion,
 
         [switch]$updateBuildVersion,
         [switch]$updateVsixCsVersion
@@ -196,14 +201,14 @@ function Vsix-IncrementVsixVersion {
 
             if ($updateVsixCsVersion -and $env:APPVEYOR_BUILD_VERSION -ne $version.ToString())
             {
-                Vsix-UpdateVsixCsVersion | Out-Null
+                Vsix-UpdateVsixCsVersion $version $initialVersion | Out-Null
             }
 
 
             # return the values to the pipeline
             New-Object PSObject -Property @{
+                'version' = $version
                 'vsixFilePath' = $vsixManifest
-                'Version' = $version
             }
         }
     }
