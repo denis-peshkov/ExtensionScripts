@@ -147,8 +147,8 @@ function Vsix-IncrementVsixVersion {
         [Parameter(Position=2, Mandatory=0)]
         [string]$versionType = "revision",
 
-        [switch]$updateBuildVersion
-	[switch]$updateVsixCsVersion
+        [switch]$updateBuildVersion,
+        [switch]$updateVsixCsVersion
     )
     process {
         foreach($manifestFile in $manifestFilePath)
