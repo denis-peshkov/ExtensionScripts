@@ -116,6 +116,24 @@ function Vsix-UpdateBuildVersion {
     }
 }
 
+function Vsix-UpdateVsixCsVersion {
+    [cmdletbinding()]
+    param (
+        [Parameter(Position=0, Mandatory=1,ValueFromPipelineByPropertyName=$true)]
+        [Version]$version,
+        [Parameter(Position=1, Mandatory=1, ValueFromPipeline=$true,ValueFromPipelineByPropertyName=$true)]
+        $vsixFilePath,
+        [Parameter(Position=2, Mandatory=1)]
+        $initialVersion
+    )
+    process{
+	Write-Host "Updating Vsix version for $vsixFilePath... " -ForegroundColor Cyan -NoNewline
+        $content = [System.IO.File]::ReadAllText($vsixFilePath).Replace($initialVersion, $version)
+        [System.IO.File]::WriteAllText($vsixFilePath, $content)
+        $version  | Write-Host -ForegroundColor Green
+    }
+}
+
 function Vsix-IncrementVsixVersion {
     [cmdletbinding()]
     param (
@@ -130,6 +148,7 @@ function Vsix-IncrementVsixVersion {
         [string]$versionType = "revision",
 
         [switch]$updateBuildVersion
+	[switch]$updateVsixCsVersion
     )
     process {
         foreach($manifestFile in $manifestFilePath)
@@ -174,6 +193,12 @@ function Vsix-IncrementVsixVersion {
             {
                 Vsix-UpdateBuildVersion $version | Out-Null
             }
+
+            if ($updateVsixCsVersion -and $env:APPVEYOR_BUILD_VERSION -ne $version.ToString())
+            {
+                Vsix-UpdateVsixCsVersion | Out-Null
+            }
+
 
             # return the values to the pipeline
             New-Object PSObject -Property @{
